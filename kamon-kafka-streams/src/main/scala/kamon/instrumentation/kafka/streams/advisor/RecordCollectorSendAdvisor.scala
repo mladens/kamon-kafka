@@ -31,6 +31,6 @@ object RecordCollectorSendAdvisor {
   def onExit(@Advice.This collector: RecordCollector with HasContext,
             @Advice.Enter scope: Scope): Unit = {
     scope.close()
-    collector.setContext(null)
+    collector.setContext(null) //TODO mladens why double
   }
 }

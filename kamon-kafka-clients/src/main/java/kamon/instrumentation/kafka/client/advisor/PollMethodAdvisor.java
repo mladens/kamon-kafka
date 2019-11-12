@@ -31,7 +31,11 @@ public class PollMethodAdvisor {
     }
 
     @Advice.OnMethodExit(suppress = Throwable.class)
-    public static <K, V> void onExit(@Advice.Local("startTime") Instant startTime, @Advice.FieldValue("groupId") String groupId, @Advice.FieldValue("clientId") String clientId, @Advice.Return(readOnly = false) ConsumerRecords<K, V> records) {
+    public static <K, V> void onExit(
+            @Advice.Local("startTime") Instant startTime,
+            @Advice.FieldValue("groupId") String groupId,
+            @Advice.FieldValue("clientId") String clientId,
+            @Advice.Return(readOnly = false) ConsumerRecords<K, V> records) {
         records = RecordProcessor.process(startTime, clientId, groupId, records);
     }
 }

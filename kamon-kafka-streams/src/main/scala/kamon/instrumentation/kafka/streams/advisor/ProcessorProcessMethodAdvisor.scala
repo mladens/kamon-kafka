@@ -59,7 +59,7 @@ object ProcessorProcessMethodAdvisor {
       // create a new span for this node
       val span = Kamon.spanBuilder(processorContext.fold("Unknown")(_.currentNode().name()))
         .asChildOf(processorContext.fold(Context.Empty)(_.context).get(Span.Key))
-        .tagMetrics("span.kind", "processor")
+        .tagMetrics("span.kind", "processor") //TODO mladens use any of `kamon.trace.Span.Kind`
         .tagMetrics("component", "kafka.stream.node")
         .start()
       Context.of(Span.Key, span)

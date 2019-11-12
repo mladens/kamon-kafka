@@ -45,7 +45,7 @@ final class ProducerCallback(callback: Callback, scope: Scope) extends Callback 
     try if(callback != null) callback.onCompletion(metadata, exception)
     finally {
       span.finish()
-      scope.close()
+      scope.close() //TODO mladens callback is invoked from another thread, scope is comming from one send is invoked from????
     }
   }
 }

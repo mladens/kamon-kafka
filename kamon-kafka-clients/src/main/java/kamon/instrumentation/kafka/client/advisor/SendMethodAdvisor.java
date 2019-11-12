@@ -66,4 +66,6 @@ public class SendMethodAdvisor {
         span.finish();
         scope.close();
     }
+
+    //TODO mladens IMO scope should not be closed here since send is async
 }

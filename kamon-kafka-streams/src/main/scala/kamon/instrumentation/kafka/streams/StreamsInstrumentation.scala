@@ -22,6 +22,7 @@ import kanela.agent.api.instrumentation.InstrumentationBuilder
 
 class StreamsInstrumentation extends InstrumentationBuilder {
 
+  //TODO mladens this might not be necessary, upcast StampedRecord to Stamped and extract .value()
   /**
     * This is required to access the original ConsumerRecord wrapped by StampedRecord
     * in order to extract his span. This span can then be used a parent for the
@@ -31,6 +32,7 @@ class StreamsInstrumentation extends InstrumentationBuilder {
     .mixin(classOf[Mixin])
     .advise(isConstructor, classOf[StampedRecordAdvisor])
 
+  //TODO mladens context is potentially already stored on thread, maybe just instrument ConsumerRecord ctor to just pickup whatever context is available at instantiation point
   /**
     * This propagates the span from the original "raw" record to the "deserialized" record
     * that is processed by the stream.
@@ -58,6 +60,10 @@ class StreamsInstrumentation extends InstrumentationBuilder {
   onType("org.apache.kafka.streams.processor.internals.StreamTask")
     .advise(method("updateProcessorContext"), classOf[StreamTaskUpdateProcessContextAdvisor])
     .advise(method("process"), classOf[StreamTaskProcessMethodAdvisor])
+  //TODO mladens we could place context in ProcessorContext, and have advice around only one method
+  //and that is actual node.process that is doing the processing
+  //Event heir code is doing measuring that way
+
 
   /**
     * Keep the stream's Kamon context on the (Abstract)ProcessorContext so that it is available
@@ -82,5 +88,6 @@ class StreamsInstrumentation extends InstrumentationBuilder {
   onSubTypesOf("org.apache.kafka.streams.processor.internals.RecordCollector")
     .mixin(classOf[HasContext.VolatileMixin])
     .advise(method("send").and(withArgument(4, classOf[Integer])), classOf[RecordCollectorSendAdvisor])
+
 
 }

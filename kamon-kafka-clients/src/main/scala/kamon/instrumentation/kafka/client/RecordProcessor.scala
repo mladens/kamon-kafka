@@ -44,6 +44,7 @@ object RecordProcessor {
         // Key could be optional ... see tests
         Option(record.key()).foreach(k => spanBuilder.tag("kafka.key", record.key().toString))
 
+        //TODO mladens followStrategy(true) == link???
         if (Client.followStrategy)
           spanBuilder.asChildOf(sendingContext.get(Span.Key))
         else
