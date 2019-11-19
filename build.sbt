@@ -1,3 +1,5 @@
+import sbt.Resolver
+
 /* =========================================================================================
  * Copyright © 2013-2019 the kamon project <http://kamon.io/>
  *
@@ -23,13 +25,21 @@ val kafkaStreamsScala   = "org.apache.kafka"    %% "kafka-streams-scala"	       
 
 val kafkaTest           = "io.github.embeddedkafka" %% "embedded-kafka"               % "2.3.0"
 val kafkaStreamTest     = "io.github.embeddedkafka" %% "embedded-kafka-streams"       % "2.3.0"
+val kafkaStreamUtils    = "org.apache.kafka"            % "kafka-streams-test-utils"           % "2.3.0"
+
+val kanelaAgent         = "io.kamon" % "kanela-agent" % "1.0.3"
+
+//val bundle = "io.kamon" %% "kamon-bundle" % "2.0.3"
 
 val lombok              = "org.projectlombok"   % "lombok"                            % "1.18.0" //1.18.8?
+
 
 
 lazy val root = (project in file("."))
   .settings(noPublishing: _*)
   .aggregate(kafkaClients, kafkaStream)
+
+resolvers += Resolver.bintrayRepo("kamon-io", "releases")
 
 lazy val kafkaClients = (project in file("kamon-kafka-clients"))
   .enablePlugins(JavaAgent)
@@ -37,12 +47,11 @@ lazy val kafkaClients = (project in file("kamon-kafka-clients"))
   .settings(name := "kamon-kafka-clients")
   .settings(scalaVersion := "2.12.9")
   .settings(crossScalaVersions := Seq("2.11.12", "2.12.9"))
-  .settings(javaAgents += "io.kamon" % "kanela-agent" % "1.0.1" % "compile;test")
   .settings(resolvers += Resolver.bintrayRepo("kamon-io", "snapshots"))
   .settings(resolvers += Resolver.mavenLocal)
   .settings(
       libraryDependencies ++=
-        compileScope(kamonCore, kafkaClient, scalaExtension) ++
+        compileScope(kamonCore, kafkaClient, scalaExtension, kanelaAgent) ++
         providedScope(lombok) ++
         testScope(kamonTestkit, scalatest, slf4jApi, logbackClassic, kafkaTest))
 
@@ -53,11 +62,10 @@ lazy val kafkaStream = (project in file("kamon-kafka-streams"))
   .settings(name := "kamon-kafka-streams")
   .settings(scalaVersion := "2.12.9")
   .settings(crossScalaVersions := Seq("2.11.12", "2.12.9"))
-  .settings(javaAgents += "io.kamon"    % "kanela-agent"   % "1.0.1"  % "compile;test")
   .settings(resolvers += Resolver.bintrayRepo("kamon-io", "snapshots"))
   .settings(resolvers += Resolver.mavenLocal)
   .settings(
         libraryDependencies ++=
-          compileScope(kamonCore, kafkaStreams, kafkaStreamsScala, scalaExtension) ++
+          compileScope(kamonCore, kafkaStreams, kafkaStreamsScala, scalaExtension, /*bundle, */kanelaAgent) ++
             providedScope(lombok) ++
-            testScope(kamonTestkit, scalatest, slf4jApi, logbackClassic, kafkaStreamTest))
+            testScope(kamonTestkit, scalatest, slf4jApi, logbackClassic, kafkaStreamTest, kafkaStreamUtils/*, bundle*/))

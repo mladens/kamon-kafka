@@ -18,9 +18,39 @@ package kamon.instrumentation.kafka.streams
 import kamon.instrumentation.context.HasContext
 import kamon.instrumentation.kafka.streams.advisor.HasConsumerRecord.Mixin
 import kamon.instrumentation.kafka.streams.advisor._
+import kamon.instrumentation.kafka.streams.advisor.metrics.SensorAdvisors.SensorMixin
+import kamon.instrumentation.kafka.streams.advisor.metrics.{CreateCacheLevelSensorAdvice, CreateNodeLevelSensorAdvice, CreateStoreLevelSensorAdvice, CreateTaskLevelSensorAdvice, CreateThreadLevelSensorAdvice, SensorCreateAdvisor, SensorRecordAdvice}
 import kanela.agent.api.instrumentation.InstrumentationBuilder
 
 class StreamsInstrumentation extends InstrumentationBuilder {
+
+  /*Instrument raw sensor factory to collect sensor name and tags.
+  * Necessary since not all (but most) sensors are created through `StreamsMetricsImpl.xxxLevelSensor`
+  **/
+  onType("org.apache.kafka.common.metrics.Metrics")
+    .advise(method("sensor").and(takesArguments(5)), classOf[SensorCreateAdvisor]) //applies SensorName, scopedSensors will have this overriden by StreamsMetricsImpl
+
+
+  /*Wiretap sensor recordings and apply them to Kamon instruments.
+  * Additional metrics added to sensor are different measures over same data and can be extracted from Kamon histogram
+  * so there's no need for extra instruments here. Metrics might bring additional tags on top of sensor's own ones.
+  * */
+  onType("org.apache.kafka.common.metrics.Sensor")
+    .mixin(classOf[SensorMixin])
+    .advise(method("record").and(takesArguments(3)), classOf[SensorRecordAdvice])
+
+  /*Instrument senosor factories to extract Kamon metric name. Sensor scope is decided based on
+  * particular method being invoked while rest of context is used to further refine metric
+  * This will override any metric name previously set by Metrics instrumentation (hopefully with a more refined one)*/
+  onType("org.apache.kafka.streams.processor.internals.metrics.StreamsMetricsImpl")
+    .advise(method("threadLevelSensor"), classOf[CreateThreadLevelSensorAdvice])
+    .advise(method("nodeLevelSensor"), classOf[CreateNodeLevelSensorAdvice])
+    .advise(method("cacheLevelSensor"), classOf[CreateCacheLevelSensorAdvice])
+    .advise(method("storeLevelSensor"), classOf[CreateStoreLevelSensorAdvice])
+    .advise(method("taskLevelSensor"), classOf[CreateTaskLevelSensorAdvice])
+
+
+
 
   //TODO mladens this might not be necessary, upcast StampedRecord to Stamped and extract .value()
   /**
